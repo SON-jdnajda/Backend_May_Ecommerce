@@ -3,7 +3,7 @@ using Shop.Domain.Exceptions;
 
 namespace Shop.Domain.Entities;
 
-public class Product : BaseEntity<Guid>, IAggregateRoot
+public sealed class Product : BaseEntity<Guid>, IAggregateRoot
 {
     public string Name {get; private set;} = default!;
     public string? Description {get; private set;}
@@ -21,7 +21,6 @@ public class Product : BaseEntity<Guid>, IAggregateRoot
         Price = price;
         StockQuantity = stockQuantity;
         CategoryId = categoryId;
-        CreateAt = DateTime.UtcNow;
     }
 
     public void DecreaseStock(int quantity)
@@ -33,7 +32,7 @@ public class Product : BaseEntity<Guid>, IAggregateRoot
             throw new InsufficientStockException(Id, StockQuantity, quantity);
 
         StockQuantity -= quantity;
-        UpdateAt = DateTime.UtcNow;
+        MarkUpdated();
     }
 
     public void IncreaseStock(int quantity)
@@ -42,6 +41,6 @@ public class Product : BaseEntity<Guid>, IAggregateRoot
             throw new ArgumentOutOfRangeException(nameof(quantity), "Số lượng phải lớn hơn 0");
 
         StockQuantity += quantity;
-        UpdateAt = DateTime.UtcNow;
+        MarkUpdated();
     }
 }
