@@ -17,7 +17,11 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(p => p.Description)
             .HasMaxLength(2000);
 
-        builder.Property(propa => propa.Version)
+        // IsConcurrencyToken - NOT IsRequired. This is what puts
+        // "AND Version = @original" into every UPDATE Products statement.
+        // Product.DecreaseStock/IncreaseStock bump the value.
+        builder.Property(p => p.Version)
+            .IsConcurrencyToken()
             .IsRequired();
 
         builder.Property(p => p.Price)
