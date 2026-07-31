@@ -35,5 +35,16 @@ namespace Shop.Domain.ValueObjects
           }
 
           public override string ToString() => $"{Amount:N0} {Currency}";
+
+          public static Money Vnd(decimal amount) => new (amount,"VND");
+
+          public Money Subtract(Money other)
+          {
+               if(other.Currency != Currency)
+                    throw new InvalidOperationException($"Không thể trừ {Currency} cho {other.Currency}");
+               if(other.Amount > Amount)
+                    throw new InvalidOperationException("Kết quả phép trừ không được âm");
+               return new Money(Amount - other.Amount, Currency);  
+          }
      }
 }
