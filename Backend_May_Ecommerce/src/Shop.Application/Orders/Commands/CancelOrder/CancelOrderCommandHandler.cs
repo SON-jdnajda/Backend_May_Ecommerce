@@ -1,7 +1,6 @@
 using MediatR;
 using Shop.Domain.Enums;
 using Shop.Domain.Repositories;
-using System.Reflection.Metadata.Ecma335;
 
 namespace Shop.Application.Orders.Commands.CancelOrder;
 
@@ -11,7 +10,10 @@ public class CancelOrderCommandHandler : IRequestHandler<CancelOrderCommand, boo
     private readonly IOrderRepository _orderRepository;
     private readonly IUnitOfWork _unitOfWork;
 
-    public CancelOrderCommandHandler(IProductRepository productRepository,IOrderRepository orderRepository, IUnitOfWork unitOfWork)
+    public CancelOrderCommandHandler(
+        IProductRepository productRepository,
+        IOrderRepository orderRepository,
+        IUnitOfWork unitOfWork)
     {
         _productRepository = productRepository;
         _orderRepository = orderRepository;
@@ -22,21 +24,28 @@ public class CancelOrderCommandHandler : IRequestHandler<CancelOrderCommand, boo
     {
         var order = await _orderRepository.GetOrderWithItemsTrackedAsync(request.OrderId, cancellationToken)
             ?? throw new KeyNotFoundException($"Order with ID '{request.OrderId}' was not found");
-        if(order.Status == OrderStatus.Cancelled)
-        {
+
+        // Guard BEFORE restoring stock. Order.CancelOrder() is already idempotent,
+        // but without this a repeated cancel would restock the same items twice.
+        if (order.Status == OrderStatus.Cancelled)
             return true;
-        }
+
         order.CancelOrder();
+
+        var productIds = order.OrderItems.Select(i => i.ProductId).Distinct().ToList();
+        var products = (await _productRepository.GetByIdsAsync(productIds, cancellationToken))
+            .ToDictionary(p => p.Id);
 
         foreach (var item in order.OrderItems)
         {
-            var product = await _productRepository.GetByIdAsync(item.ProductId, cancellationToken);
-            if(product !=  null)
-            {
+            // A product deleted after the order was placed is skipped rather than
+            // failing the cancellation - the customer should still get cancelled.
+            if (products.TryGetValue(item.ProductId, out var product))
                 product.IncreaseStock(item.Quantity);
-            }
         }
+
         await _unitOfWork.SaveChangeAsync(cancellationToken);
+
         return true;
     }
 }
