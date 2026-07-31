@@ -7,8 +7,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer(); // <--- ADD THIS
-builder.Services.AddSwaggerGen();           // <--- ADD THIS
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -19,14 +19,16 @@ builder.Services.AddExceptionHandler<CustomExceptionHandler>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+
+// First in the pipeline so it catches exceptions from everything downstream,
+// including the Swagger middleware below.
+app.UseExceptionHandler();
+
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();   // <--- ADD THIS
-    app.UseSwaggerUI(); // <--- ADD THIS
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
-
-// Must come first so it can catch exceptions from everything downstream.
-app.UseExceptionHandler();
 
 app.UseHttpsRedirection();
 

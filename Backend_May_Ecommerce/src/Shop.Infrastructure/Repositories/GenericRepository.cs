@@ -21,6 +21,9 @@ public class GenericRepository<T> : IGenericRepository<T>
     public async Task<T?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         => await DbSet.FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
 
+    public async Task<T?> GetByIdAsNoTrackingAsync(Guid id, CancellationToken cancellationToken = default)
+        => await DbSet.AsNoTracking().FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+
     public async Task<IReadOnlyList<T>> GetAllAsync(CancellationToken cancellationToken = default)
         => await DbSet.AsNoTracking().ToListAsync(cancellationToken);
 

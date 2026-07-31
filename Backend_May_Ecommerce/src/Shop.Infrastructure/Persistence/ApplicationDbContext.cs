@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Shop.Domain.Entities;
+using Shop.Domain.Exceptions;
 using Shop.Domain.Repositories;
 
 namespace Shop.Infrastructure.Persistence;
@@ -22,6 +23,16 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
 
     public async Task<int> SaveChangeAsync(CancellationToken cancellationToken = default)
     {
-        return await base.SaveChangesAsync(cancellationToken);
+        try
+        {
+            return await base.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            // Translate at the boundary so Shop.Application never needs to
+            // reference EF Core just to catch a persistence-specific exception.
+            throw new ConcurrencyConflictException(
+                "The data changed while your request was being processed. Please retry.", ex);
+        }
     }
 }
