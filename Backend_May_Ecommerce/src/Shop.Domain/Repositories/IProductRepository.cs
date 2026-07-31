@@ -1,13 +1,12 @@
-﻿using Shop.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using Shop.Domain.Entities;
 
-namespace Shop.Domain.Repositories
+namespace Shop.Domain.Repositories;
+
+public interface IProductRepository : IGenericRepository<Product>
 {
-    public interface IProductRepository : IGenericRepository<Product>
-
-    {
-
-    }
+    /// <summary>
+    /// Tracked batch load. One round trip for a whole order instead of N.
+    /// </summary>
+    Task<IReadOnlyList<Product>> GetByIdsAsync(
+        IEnumerable<Guid> ids, CancellationToken cancellationToken = default);
 }

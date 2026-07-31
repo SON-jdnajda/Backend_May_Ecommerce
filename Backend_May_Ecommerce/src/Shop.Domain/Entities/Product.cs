@@ -6,18 +6,36 @@ namespace Shop.Domain.Entities;
 public sealed class Product : BaseEntity<Guid>, IAggregateRoot
 {
     public string Name {get; private set;} = default!;
-    public string? Description {get; private set;}
+    public string? Description { get; private set;}
     public decimal Price {get; private set;}
     public int StockQuantity {get; private set;}
     public Guid CategoryId {get; private set;}
-    public uint Version {get; set;}
+
+    /// <summary>
+    /// Optimistic concurrency token. Every stock mutation bumps it, and EF adds
+    /// "AND Version = @original" to the UPDATE - so a write that lost the race
+    /// matches zero rows and raises a conflict instead of silently overwriting.
+    /// </summary>
+    public uint Version {get; private set;}
 
     private Product() {}
 
-    public Product(string name, string? description, decimal price, int stockQuantity, Guid categoryId){
+    public Product(string name, string? description, decimal price, int stockQuantity, Guid categoryId)
+    {
+        if(string.IsNullOrWhiteSpace(name))
+            throw new InvalidProductException("Tên sản phẩm không được để trống");
+        if(name.Length > 200)
+            throw new InvalidProductException("Tên sản phẩm không được vượt quá 200 ký tự");
+        if(price < 0)
+            throw new InvalidProductException("Giá sản phẩm không được âm");
+        if(stockQuantity < 0)
+            throw new InvalidProductException("Số lượng tồn kho không được âm");
+        if(categoryId == Guid.Empty)
+            throw new InvalidProductException("Sản phẩm phải thuộc một danh mục");
+
         Id = Guid.NewGuid();
-        Name = name;
-        Description = description;
+        Name = name.Trim();
+        Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
         Price = price;
         StockQuantity = stockQuantity;
         CategoryId = categoryId;
@@ -32,6 +50,7 @@ public sealed class Product : BaseEntity<Guid>, IAggregateRoot
             throw new InsufficientStockException(Id, StockQuantity, quantity);
 
         StockQuantity -= quantity;
+        Version++;
         MarkUpdated();
     }
 
@@ -41,6 +60,7 @@ public sealed class Product : BaseEntity<Guid>, IAggregateRoot
             throw new ArgumentOutOfRangeException(nameof(quantity), "Số lượng phải lớn hơn 0");
 
         StockQuantity += quantity;
+        Version++;
         MarkUpdated();
     }
 }
