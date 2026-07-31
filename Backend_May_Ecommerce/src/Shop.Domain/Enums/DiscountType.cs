@@ -1,8 +1,7 @@
-namespace Shop.Domain.Enums
+namespace Shop.Domain.Enums;
+
+public enum DiscountType
 {
-     public enum DiscountType
-     {
-          Percentage = 1,
-          FixedAmount = 2
-     }
+    Percentage = 1,
+    FixedAmount = 2
 }

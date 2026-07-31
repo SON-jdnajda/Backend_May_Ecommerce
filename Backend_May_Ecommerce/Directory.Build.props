@@ -1,0 +1,22 @@
+<Project>
+
+  <!-- Applies to every project under this folder.
+       Warnings become errors so mistakes like CS0649 (field never assigned) and
+       CS4014 (call not awaited) cannot reach a running app. If one warning ever
+       becomes genuinely noisy, exempt just that code via <NoWarn>, not the lot. -->
+  <PropertyGroup>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsNotAsErrors>NU1901;NU1902;NU1903;NU1904</WarningsNotAsErrors>
+
+    <!-- IDE-prefixed analyzers (see .editorconfig) do not run during `dotnet build`
+         without this. Required for IDE0005 "unnecessary using" to be enforced. -->
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+
+    <!-- IDE0005 additionally requires the compiler to produce a doc file.
+         CS1591 ("missing XML comment") is suppressed - we want the analyzer,
+         not a mandate to document every public member. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+</Project>

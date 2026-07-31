@@ -1,0 +1,22 @@
+root = true
+
+[*.cs]
+# Enforced at build time via EnforceCodeStyleInBuild in Directory.Build.props.
+# Combined with TreatWarningsAsErrors, these fail the build rather than nag.
+dotnet_diagnostic.IDE0005.severity = error   # unnecessary using directives
+dotnet_diagnostic.IDE0161.severity = error   # use file-scoped namespace
+
+csharp_style_namespace_declarations = file_scoped:error
+dotnet_sort_system_directives_first = true
+
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# EF Core writes migrations for us; we do not hand-edit them, so holding
+# generated code to our style rules only creates busywork on every scaffold.
+[**/Migrations/*.cs]
+dotnet_diagnostic.IDE0005.severity = none
+dotnet_diagnostic.IDE0161.severity = none
+generated_code = true

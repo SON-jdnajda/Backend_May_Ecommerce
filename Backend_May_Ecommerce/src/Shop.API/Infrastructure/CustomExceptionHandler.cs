@@ -27,8 +27,17 @@ public class CustomExceptionHandler : IExceptionHandler
         {
             ValidationException validationException => BuildValidationProblem(validationException),
 
-            // Every domain rule violation lands here because they all derive from
-            // DomainException - that is why the exception hierarchy is worth having.
+            // MUST come before the DomainException arm: switch takes the first match,
+            // and a lost concurrency race is 409 (safe to retry), not 400 (don't resend).
+            ConcurrencyConflictException conflictException => new ProblemDetails
+            {
+                Status = StatusCodes.Status409Conflict,
+                Title = "Concurrent modification",
+                Detail = conflictException.Message
+            },
+
+            // Every other domain rule violation lands here because they all derive
+            // from DomainException - that is why the exception hierarchy is worth having.
             DomainException domainException => new ProblemDetails
             {
                 Status = StatusCodes.Status400BadRequest,
