@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Shop.Application.Common;
 using Shop.Application.Products.Commands.CreateProduct;
 using Shop.Application.Products.Queries;
 using Shop.Application.Products.Queries.GetProductById;
@@ -29,13 +30,18 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet]
-    [ProducesResponseType(typeof(IReadOnlyList<ProductDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyList<ProductDto>>> GetAll(CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(PagedResult<ProductDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<ProductDto>>> GetAll(
+    [FromQuery] int page = 1,
+    [FromQuery] int pageSize = 20,
+    CancellationToken cancellationToken = default)
     {
-        var products = await _sender.Send(new GetProductsListQuery(), cancellationToken);
+        var result = await _sender.Send(
+            new GetProductsListQuery(page, pageSize), cancellationToken);
 
-        return Ok(products);
+        return Ok(result);
     }
+
 
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(ProductDto), StatusCodes.Status200OK)]
