@@ -1,33 +1,31 @@
-﻿using MediatR;
+using MediatR;
 using Shop.Domain.Repositories;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace Shop.Application.Products.Queries.GetProductById
+namespace Shop.Application.Products.Queries.GetProductById;
+
+public class GetProductByIdQueryHandler : IRequestHandler<GetProductByIdQuery, ProductDto?>
 {
-    public class GetProductByIdQueryHandler : IRequestHandler<GetProductByIdQuery, ProductDto?>
+    private readonly IProductRepository _productRepository;
+
+    public GetProductByIdQueryHandler(IProductRepository productRepository)
     {
-        private readonly IProductRepository _productRepository;
+        _productRepository = productRepository;
+    }
 
-        public GetProductByIdQueryHandler(IProductRepository productRepository)
-        {
-            _productRepository = productRepository;
-        }
+    public async Task<ProductDto?> Handle(GetProductByIdQuery request, CancellationToken cancellationToken)
+    {
+        // Untracked: this only ever projects to a DTO.
+        var product = await _productRepository.GetByIdAsNoTrackingAsync(request.Id, cancellationToken);
+        if (product is null)
+            return null;
 
-        public async Task<ProductDto?> Handle(GetProductByIdQuery request, CancellationToken cancellationToken)
-        {
-            var product = await _productRepository.GetByIdAsync(request.Id, cancellationToken);
-            if (product == null)
-                return null;
-            return new ProductDto(
-                product.Id,
-                product.Name,
-                product.Description,
-                product.Price,
-                product.StockQuantity,
-                product.CategoryId
-                );
-        }
+        return new ProductDto(
+            product.Id,
+            product.Name,
+            product.Description,
+            product.Price,
+            product.StockQuantity,
+            product.CategoryId
+        );
     }
 }

@@ -26,7 +26,7 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
         );
 
         await _productRepository.AddAsync(product, cancellationToken);
-        await _unitOfWork.SaveChangeAsync(cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return product.Id;
     }

@@ -48,7 +48,7 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Gui
         // One transaction covers the order insert AND every stock decrement.
         // A lost concurrency race surfaces as ConcurrencyConflictException,
         // which CustomExceptionHandler maps to 409 - no try/catch needed here.
-        await _unitOfWork.SaveChangeAsync(cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return order.Id;
     }

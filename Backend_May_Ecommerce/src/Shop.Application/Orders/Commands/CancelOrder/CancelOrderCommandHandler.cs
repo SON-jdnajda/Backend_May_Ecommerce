@@ -44,7 +44,7 @@ public class CancelOrderCommandHandler : IRequestHandler<CancelOrderCommand, boo
                 product.IncreaseStock(item.Quantity);
         }
 
-        await _unitOfWork.SaveChangeAsync(cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return true;
     }

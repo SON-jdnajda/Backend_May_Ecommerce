@@ -1,9 +1,5 @@
-﻿using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using MediatR;
 
-namespace Shop.Application.Products.Queries.GetProductById
-{
-    public record GetProductByIdQuery(Guid Id) : IRequest<ProductDto?>;
-}
+namespace Shop.Application.Products.Queries.GetProductById;
+
+public record GetProductByIdQuery(Guid Id) : IRequest<ProductDto?>;

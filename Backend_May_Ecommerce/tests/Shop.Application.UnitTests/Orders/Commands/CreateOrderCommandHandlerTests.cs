@@ -47,7 +47,7 @@ public class CreateOrderCommandHandlerTests
         product.StockQuantity.Should().Be(8);
 
         await _orderRepository.Received(1).AddAsync(Arg.Any<Order>(), Arg.Any<CancellationToken>());
-        await _unitOfWork.Received(1).SaveChangeAsync(Arg.Any<CancellationToken>());
+        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -124,7 +124,7 @@ public class CreateOrderCommandHandlerTests
         var act = async () => await _handler.Handle(command, CancellationToken.None);
 
         await act.Should().ThrowAsync<InsufficientStockException>();
-        await _unitOfWork.DidNotReceive().SaveChangeAsync(Arg.Any<CancellationToken>());
+        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -136,7 +136,7 @@ public class CreateOrderCommandHandlerTests
         var product = new Product("Smartphone", "Desc", 500m, 5, Guid.NewGuid());
         GivenProducts(product);
 
-        _unitOfWork.When(x => x.SaveChangeAsync(Arg.Any<CancellationToken>()))
+        _unitOfWork.When(x => x.SaveChangesAsync(Arg.Any<CancellationToken>()))
             .Do(_ => throw new ConcurrencyConflictException("The data changed while your request was being processed. Please retry."));
 
         var command = new CreateOrderCommand(

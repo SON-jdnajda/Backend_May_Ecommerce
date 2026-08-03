@@ -14,9 +14,16 @@ public static class DependencyInjection
         IConfiguration configuration)
     {
         services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
 
+        // Resolve the SAME scoped DbContext as the Unit of Work.
+        // AddScoped<IUnitOfWork, ApplicationDbContext>() would build a SECOND
+        // instance, and it would try to save changes it never saw.
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ApplicationDbContext>());
+
+        // Open generic: covers IGenericRepository<Category> and any other
+        // aggregate that does not need its own repository interface yet.
+        services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();

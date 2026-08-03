@@ -9,14 +9,10 @@ public sealed class Product : BaseEntity<Guid>, IAggregateRoot
     public string? Description { get; private set;}
     public decimal Price {get; private set;}
     public int StockQuantity {get; private set;}
-    public Guid CategoryId {get; private set;}
+    public Guid CategoryId { get; private set; }
+    public Category Category { get; private set; } = default!;
 
-    /// <summary>
-    /// Optimistic concurrency token. Every stock mutation bumps it, and EF adds
-    /// "AND Version = @original" to the UPDATE - so a write that lost the race
-    /// matches zero rows and raises a conflict instead of silently overwriting.
-    /// </summary>
-    public uint Version {get; private set;}
+    public int Version {get; private set;}
 
     private Product() {}
 
