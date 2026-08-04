@@ -4,6 +4,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Shop.Domain.Repositories;
 using Shop.Infrastructure.Persistence;
 using Shop.Infrastructure.Repositories;
+using Shop.Application.Auth;
+using Shop.Infrastructure.Auth;
 
 namespace Shop.Infrastructure;
 
@@ -16,17 +18,14 @@ public static class DependencyInjection
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
 
-        // Resolve the SAME scoped DbContext as the Unit of Work.
-        // AddScoped<IUnitOfWork, ApplicationDbContext>() would build a SECOND
-        // instance, and it would try to save changes it never saw.
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ApplicationDbContext>());
-
-        // Open generic: covers IGenericRepository<Category> and any other
-        // aggregate that does not need its own repository interface yet.
         services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
+        services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
 
         return services;
     }
