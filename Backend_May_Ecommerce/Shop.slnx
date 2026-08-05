@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/ApiGateway/ApiGateway.csproj" />
     <Project Path="src/Shop.API/Shop.API.csproj" />
     <Project Path="src/Shop.Application/Shop.Application.csproj" />
     <Project Path="src/Shop.Domain/Shop.Domain.csproj" />
