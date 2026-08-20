@@ -1,0 +1,23 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+  # OpenTelemetry emits dotted names (http.server.request.duration, http.route).
+  # Prometheus 3 negotiates UTF-8 with the exporter and would store them verbatim,
+  # forcing every query into quoted-name syntax and breaking community dashboards.
+  # Legacy validation escapes them to the classic http_server_..., http_route form.
+  metric_name_validation_scheme: legacy
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets:
+          - prometheus:9090
+
+  - job_name: shop-api
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - host.docker.internal:5204
+        labels:
+          env: local

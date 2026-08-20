@@ -1,0 +1,303 @@
+{
+  "uid": "shop-api-red",
+  "title": "Shop API - RED",
+  "description": "Rate, Errors, Duration for shop-api, plus runtime saturation and order business metrics.",
+  "tags": ["shop", "red"],
+  "timezone": "browser",
+  "editable": false,
+  "schemaVersion": 39,
+  "version": 2,
+  "refresh": "30s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "job",
+        "label": "Job",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "query": "label_values(up, job)",
+        "current": { "text": "shop-api", "value": "shop-api" },
+        "refresh": 1,
+        "includeAll": false,
+        "multi": false
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Rate - requests/sec by route",
+      "description": "The /metrics route is excluded: Prometheus scrapes it every 15s forever, which would otherwise dominate the chart and flatten real traffic.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "editorMode": "code",
+          "range": true,
+          "legendFormat": "{{http_route}}",
+          "expr": "sum by (http_route) (rate(http_server_request_duration_seconds_count{job=\"$job\", http_route!=\"/metrics\"}[5m]))"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Errors - 5xx ratio",
+      "description": "5xx only. 4xx means the client sent something invalid (400, 401, 404, 409 from a concurrency conflict) - counting those would make this fire on normal user mistakes. The 'or vector(0)' keeps the panel at zero instead of blank when there are no errors at all.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 20,
+            "showPoints": "never"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 0.01 },
+              { "color": "red", "value": 0.05 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "calcs": [] },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "editorMode": "code",
+          "range": true,
+          "legendFormat": "5xx ratio",
+          "expr": "(sum(rate(http_server_request_duration_seconds_count{job=\"$job\", http_response_status_code=~\"5..\"}[5m])) or vector(0)) / sum(rate(http_server_request_duration_seconds_count{job=\"$job\"}[5m]))"
+        },
+        {
+          "refId": "B",
+          "editorMode": "code",
+          "range": true,
+          "legendFormat": "4xx ratio",
+          "expr": "(sum(rate(http_server_request_duration_seconds_count{job=\"$job\", http_response_status_code=~\"4..\"}[5m])) or vector(0)) / sum(rate(http_server_request_duration_seconds_count{job=\"$job\"}[5m]))"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Duration - p50 / p95 / p99",
+      "description": "Buckets are summed BEFORE histogram_quantile. Computing a quantile per instance and averaging the results is mathematically wrong - an average of percentiles is not a percentile.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 0,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "editorMode": "code",
+          "range": true,
+          "legendFormat": "p50",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(http_server_request_duration_seconds_bucket{job=\"$job\", http_route!=\"/metrics\"}[5m])))"
+        },
+        {
+          "refId": "B",
+          "editorMode": "code",
+          "range": true,
+          "legendFormat": "p95",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_request_duration_seconds_bucket{job=\"$job\", http_route!=\"/metrics\"}[5m])))"
+        },
+        {
+          "refId": "C",
+          "editorMode": "code",
+          "range": true,
+          "legendFormat": "p99",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_request_duration_seconds_bucket{job=\"$job\", http_route!=\"/metrics\"}[5m])))"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Duration - p95 by route",
+      "description": "Which endpoint owns the tail. A global p95 tells you something is slow; this tells you which file to open.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 0,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["max"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "editorMode": "code",
+          "range": true,
+          "legendFormat": "{{http_route}}",
+          "expr": "histogram_quantile(0.95, sum by (le, http_route) (rate(http_server_request_duration_seconds_bucket{job=\"$job\", http_route!=\"/metrics\"}[5m])))"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Saturation - concurrency, CPU, GC",
+      "description": "Why it is slow. GC pause ratio is seconds of pause per second of wall clock; sustained above 0.05 means the allocation rate, not the code path, is the problem.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 0,
+            "showPoints": "never"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "gc pause ratio" },
+            "properties": [{ "id": "unit", "value": "percentunit" }]
+          }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "editorMode": "code",
+          "range": true,
+          "legendFormat": "in-flight requests",
+          "expr": "sum(http_server_active_requests{job=\"$job\"})"
+        },
+        {
+          "refId": "B",
+          "editorMode": "code",
+          "range": true,
+          "legendFormat": "cpu cores used",
+          "expr": "sum(rate(dotnet_process_cpu_time_seconds_total{job=\"$job\"}[5m]))"
+        },
+        {
+          "refId": "C",
+          "editorMode": "code",
+          "range": true,
+          "legendFormat": "gc pause ratio",
+          "expr": "sum(rate(dotnet_gc_pause_time_seconds_total{job=\"$job\"}[5m]))"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Business - orders placed vs cancelled",
+      "description": "The panel infrastructure metrics cannot produce. A deploy that keeps p99 flat while orders/sec drops to zero is still an outage. Stays empty until the first order is placed - OpenTelemetry only exports an instrument after its first recording.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "showPoints": "never"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "median order value" },
+            "properties": [{ "id": "custom.axisPlacement", "value": "right" }]
+          }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "editorMode": "code",
+          "range": true,
+          "legendFormat": "placed /sec",
+          "expr": "sum(rate(shop_orders_placed_total{job=\"$job\"}[5m]))"
+        },
+        {
+          "refId": "B",
+          "editorMode": "code",
+          "range": true,
+          "legendFormat": "cancelled /sec",
+          "expr": "sum(rate(shop_orders_cancelled_total{job=\"$job\"}[5m]))"
+        },
+        {
+          "refId": "C",
+          "editorMode": "code",
+          "range": true,
+          "legendFormat": "median order value",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(shop_orders_value_bucket{job=\"$job\"}[5m])))"
+        }
+      ]
+    }
+  ]
+}

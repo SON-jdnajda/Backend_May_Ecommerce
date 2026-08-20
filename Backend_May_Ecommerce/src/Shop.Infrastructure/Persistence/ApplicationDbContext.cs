@@ -19,7 +19,6 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        // Apply all IEntityTypeConfiguration implementations in this assembly automatically
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
     }
 
@@ -31,8 +30,6 @@ public class ApplicationDbContext : DbContext, IUnitOfWork
         }
         catch (DbUpdateConcurrencyException ex)
         {
-            // Translate at the boundary so Shop.Application never needs to
-            // reference EF Core just to catch a persistence-specific exception.
             throw new ConcurrencyConflictException(
                 "The data changed while your request was being processed. Please retry.", ex);
         }

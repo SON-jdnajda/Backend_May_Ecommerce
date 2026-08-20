@@ -1,4 +1,5 @@
 using MediatR;
+using Shop.Application.Common.Diagnostics;
 using Shop.Domain.Enums;
 using Shop.Domain.Repositories;
 
@@ -9,15 +10,18 @@ public class CancelOrderCommandHandler : IRequestHandler<CancelOrderCommand, boo
     private readonly IProductRepository _productRepository;
     private readonly IOrderRepository _orderRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IOrderMetrics _metrics;
 
     public CancelOrderCommandHandler(
         IProductRepository productRepository,
         IOrderRepository orderRepository,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IOrderMetrics metrics)
     {
         _productRepository = productRepository;
         _orderRepository = orderRepository;
         _unitOfWork = unitOfWork;
+        _metrics = metrics;
     }
 
     public async Task<bool> Handle(CancelOrderCommand request, CancellationToken cancellationToken)
@@ -45,6 +49,9 @@ public class CancelOrderCommandHandler : IRequestHandler<CancelOrderCommand, boo
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // The early return above means a repeated cancel is not counted twice.
+        _metrics.OrderCancelled();
 
         return true;
     }

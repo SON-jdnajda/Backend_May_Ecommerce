@@ -1,5 +1,6 @@
 using FluentAssertions;
 using NSubstitute;
+using Shop.Application.Common.Diagnostics;
 using Shop.Application.Orders.Commands.CreateOrder;
 using Shop.Domain.Entities;
 using Shop.Domain.Exceptions;
@@ -12,6 +13,7 @@ public class CreateOrderCommandHandlerTests
     private readonly IOrderRepository _orderRepository = Substitute.For<IOrderRepository>();
     private readonly IProductRepository _productRepository = Substitute.For<IProductRepository>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
+    private readonly IOrderMetrics _metrics = Substitute.For<IOrderMetrics>();
 
     private readonly CreateOrderCommandHandler _handler;
 
@@ -20,7 +22,8 @@ public class CreateOrderCommandHandlerTests
         _handler = new CreateOrderCommandHandler(
             _orderRepository,
             _productRepository,
-            _unitOfWork);
+            _unitOfWork,
+            _metrics);
     }
 
     private void GivenProducts(params Product[] products) =>

@@ -1,6 +1,4 @@
-using System.Text;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
+using Shop.API.Extensions;
 using Shop.API.Infrastructure;
 using Shop.Application;
 using Shop.Infrastructure;
@@ -19,21 +17,10 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<CustomExceptionHandler>();
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:SecretKey"]!))
-        };
-    });
+builder.Services.AddJwtAuthentication(builder.Configuration);
+
+builder.Services.AddObservability(builder.Configuration, builder.Environment);
+builder.Services.AddHealthProbes();
 
 var app = builder.Build();
 
@@ -52,5 +39,12 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Scrape and probe endpoints are mapped after MapControllers but are not
+// controllers themselves - they stay unauthenticated on purpose so Prometheus
+// and the orchestrator can reach them without a token. In production they
+// belong on a separate, network-restricted port.
+app.MapPrometheusScrapingEndpoint();
+app.MapHealthProbes();
 
 app.Run();

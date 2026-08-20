@@ -480,3 +480,6 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Ket qua benchmark k6 - so lieu duoc chep vao perf/README.md
+perf/out/
