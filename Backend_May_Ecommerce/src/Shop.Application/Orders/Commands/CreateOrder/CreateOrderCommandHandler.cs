@@ -1,4 +1,5 @@
 using MediatR;
+using Shop.Application.Common.Diagnostics;
 using Shop.Domain.Entities;
 using Shop.Domain.Exceptions;
 using Shop.Domain.Repositories;
@@ -10,15 +11,18 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Gui
     private readonly IOrderRepository _orderRepository;
     private readonly IProductRepository _productRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IOrderMetrics _metrics;
 
     public CreateOrderCommandHandler(
         IOrderRepository orderRepository,
         IProductRepository productRepository,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IOrderMetrics metrics)
     {
         _orderRepository = orderRepository;
         _productRepository = productRepository;
         _unitOfWork = unitOfWork;
+        _metrics = metrics;
     }
 
     public async Task<Guid> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
@@ -49,6 +53,10 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Gui
         // A lost concurrency race surfaces as ConcurrencyConflictException,
         // which CustomExceptionHandler maps to 409 - no try/catch needed here.
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // Recorded only after the commit succeeds. Counting before SaveChanges
+        // would inflate the metric with orders lost to a concurrency conflict.
+        _metrics.OrderPlaced(order.OrderItems.Count, order.TotalAmount);
 
         return order.Id;
     }

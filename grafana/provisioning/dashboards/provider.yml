@@ -1,0 +1,19 @@
+apiVersion: 1
+
+providers:
+  - name: shop-dashboards
+    orgId: 1
+    folder: Shop
+    type: file
+    # Deletion stays enabled: removing the JSON from git must remove the
+    # dashboard from Grafana, otherwise the repo stops being the source of truth.
+    disableDeletion: false
+    # Read-only in the UI. Editing there would drift from the file and be
+    # silently overwritten on the next reload.
+    allowUiUpdates: false
+    updateIntervalSeconds: 30
+    options:
+      # A subdirectory on purpose: pointing this at the provisioning folder
+      # itself would make Grafana try to parse provider.yml as a dashboard.
+      path: /etc/grafana/provisioning/dashboards/json
+      foldersFromFilesStructure: false

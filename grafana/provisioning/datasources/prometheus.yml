@@ -1,0 +1,16 @@
+apiVersion: 1
+
+# Provisioned as code so a fresh `docker compose up` gives an identical Grafana.
+# Clicking the datasource in through the UI would live only in the volume.
+datasources:
+  - name: Prometheus
+    type: prometheus
+    uid: prometheus
+    access: proxy
+    # Service name on shop-net, not localhost: this resolves inside the
+    # Grafana container, where localhost is Grafana itself.
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      timeInterval: 15s
