@@ -1,4 +1,5 @@
 using MediatR;
+using Shop.Application.Common.Caching;
 using Shop.Domain.Entities;
 using Shop.Domain.Repositories;
 
@@ -8,11 +9,16 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
 {
     private readonly IProductRepository _productRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ICacheService _cache;
 
-    public CreateProductCommandHandler(IProductRepository productRepository, IUnitOfWork unitOfWork)
+    public CreateProductCommandHandler(
+        IProductRepository productRepository,
+        IUnitOfWork unitOfWork,
+        ICacheService cache)
     {
         _productRepository = productRepository;
         _unitOfWork = unitOfWork;
+        _cache = cache;
     }
 
     public async Task<Guid> Handle(CreateProductCommand request, CancellationToken cancellationToken)
@@ -27,6 +33,9 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
 
         await _productRepository.AddAsync(product, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+        // Only after the write commits. Bumping earlier would invalidate the
+        // cache for a product that may never exist.
+        await _cache.BumpVersionAsync(CacheScopes.Products, cancellationToken);
 
         return product.Id;
     }
