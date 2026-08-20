@@ -371,7 +371,7 @@ File đó được git theo dõi. Dùng `dotnet user-secrets` cho môi trường
 ## 10. VIỆC CÒN LẠI
 
 - [ ] Đo k6 mốc **C** (cache) — cần seed lại 50.000 sản phẩm
-- [ ] Tách `Database.Migrate()` ra project CLI độc lập
+- [x] Tách migration ra project CLI độc lập — `Shop.MigrationRunner`, exit code 0/1/2
 - [ ] `POST /api/products` hiện **không có `[Authorize]`** — endpoint ghi đang để trần
 - [ ] Cân nhắc: `/health/ready` trả HTTP 200 khi `Degraded` (mặc định ASP.NET Core) — với cache thì chấp nhận được, nhưng nên là lựa chọn **cố ý**
 - [ ] Hạ nốt 5 300 ms của request đầu tiên bằng `Task.WhenAny` + `Task.Delay` (bỏ chạy thay vì cố hủy)
